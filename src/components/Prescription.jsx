@@ -212,7 +212,7 @@ export default function Prescription() {
 
   const handleSave = async () => {
     if (!validateForm()) {
-      return;
+      return false;
     }
 
     try {
@@ -225,8 +225,10 @@ export default function Prescription() {
       await exportToGoogleSheets(formData, "prescription");
       
       alert("Prescription saved.");
+      return true;
     } catch (error) {
       console.error("Error saving prescription:", error);
+      return false;
     }
   };
 
@@ -357,7 +359,7 @@ export default function Prescription() {
         <button className="reset-btn" type="button" onClick={handleReset}>
           Reset
         </button>
-        <button className="proceed-btn" type="button" onClick={() => { handleSave(); setTimeout(() => window.print(), 500); }}>
+        <button className="proceed-btn" type="button" onClick={async () => { const saved = await handleSave(); if (saved) { setTimeout(() => window.print(), 500); } }}>
           Save & Print
         </button>
         <button className="proceed-btn" type="button" onClick={handleContinueToBilling}>
