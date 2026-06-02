@@ -22,6 +22,10 @@ export default function Home() {
         <Link to="/billing" className="hero-btn blue-btn">
           Direct Billing
         </Link>
+
+        <Link to="/followups" className="hero-btn orange-btn">
+          📋 Followups
+        </Link>
       </div>
 
     </div>

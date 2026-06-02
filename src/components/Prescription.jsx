@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { collection, addDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 import { db } from "../firebase";
 import { fetchPatientByUID, findNextAvailableUID, searchPatientsByName, searchPatientsByPhone } from "../utils/patientUtils";
 import { exportToGoogleSheets } from "../utils/googleSheetsExport";
@@ -24,7 +25,10 @@ export default function Prescription() {
     address: "",
     date: getTodayDate(),
     prescription: "",
-    notes: ""
+    notes: "",
+    followupRequired: false,
+    followupDate: "",
+    followupReason: ""
   });
   const [loadingNextUID, setLoadingNextUID] = useState(false);
   const [loadingCheckUID, setLoadingCheckUID] = useState(false);
@@ -56,7 +60,7 @@ export default function Prescription() {
   }, [formData.uid]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     
     // Allow only numeric values for age, weight, and mobile
     if ((name === "age" || name === "weight" || name === "mobile") && value !== "") {
@@ -65,9 +69,12 @@ export default function Prescription() {
       }
     }
     
+    // Handle checkboxes separately to get boolean value
+    const nextValue = type === "checkbox" ? checked : value;
+
     setFormData({
       ...formData,
-      [name]: value
+      [name]: nextValue
     });
   };
 
@@ -99,13 +106,16 @@ export default function Prescription() {
       address: "",
       date: getTodayDate(),
       prescription: "",
-      notes: ""
+      notes: "",
+      followupRequired: false,
+      followupDate: "",
+      followupReason: ""
     });
   };
 
   const handleCheckUID = async () => {
     if (!formData.uid) {
-      alert("Please enter a UID first");
+      toast.warning("Please enter a UID first");
       return;
     }
 
@@ -122,9 +132,20 @@ export default function Prescription() {
           address: patient.address || "",
           date: patient.date || ""
         }));
-        alert("Patient details loaded successfully!");
+        toast.success("Patient details loaded successfully!");
+        
+        // Check for pending followup
+        if (patient.followupRequired && patient.followupDate) {
+          const followupDate = new Date(patient.followupDate);
+          const today = new Date();
+          if (followupDate <= today) {
+            toast.warning(`⚠️ Pending followup for ${patient.name}! Due: ${patient.followupDate}. Reason: ${patient.followupReason || "Not specified"}`);
+          } else {
+            toast.info(`📅 Followup scheduled for ${patient.followupDate}`);
+          }
+        }
       } else {
-        alert("No existing patient data found for this UID. Ready for new patient entry.");
+        toast.info("No existing patient data found for this UID. Ready for new patient entry.");
         // Clear form for new patient
         setFormData((prev) => ({
           ...prev,
@@ -136,12 +157,15 @@ export default function Prescription() {
           address: "",
           date: "",
           prescription: "",
-          notes: ""
+          notes: "",
+          followupRequired: false,
+          followupDate: "",
+          followupReason: ""
         }));
       }
     } catch (error) {
       console.error("Error checking UID:", error);
-      alert("Error checking UID. Please try again.");
+      toast.error("Error checking UID. Please try again.");
     } finally {
       setLoadingCheckUID(false);
     }
@@ -149,7 +173,7 @@ export default function Prescription() {
 
   const handleSearchByName = async () => {
     if (!formData.name || formData.name.trim().length === 0) {
-      alert("Please enter a patient name to search");
+      toast.warning("Please enter a patient name to search");
       return;
     }
 
@@ -159,13 +183,14 @@ export default function Prescription() {
       const results = await searchPatientsByName(formData.name);
       setSearchResults(results);
       if (results.length === 0) {
-        alert("No patients found with that name");
+        toast.info("No patients found with that name");
       } else {
         setShowSearchModal(true);
+        toast.info(`Found ${results.length} patient(s)`);
       }
     } catch (error) {
       console.error("Error searching by name:", error);
-      alert("Error searching for patients");
+      toast.error("Error searching for patients");
     } finally {
       setLoadingSearch(false);
     }
@@ -173,7 +198,7 @@ export default function Prescription() {
 
   const handleSearchByPhone = async () => {
     if (!formData.mobile || formData.mobile.trim().length === 0) {
-      alert("Please enter a phone number to search");
+      toast.warning("Please enter a phone number to search");
       return;
     }
 
@@ -183,13 +208,14 @@ export default function Prescription() {
       const results = await searchPatientsByPhone(formData.mobile);
       setSearchResults(results);
       if (results.length === 0) {
-        alert("No patients found with that phone number");
+        toast.info("No patients found with that phone number");
       } else {
         setShowSearchModal(true);
+        toast.info(`Found ${results.length} patient(s)`);
       }
     } catch (error) {
       console.error("Error searching by phone:", error);
-      alert("Error searching for patients");
+      toast.error("Error searching for patients");
     } finally {
       setLoadingSearch(false);
     }
@@ -207,7 +233,7 @@ export default function Prescription() {
       date: patient.date || ""
     }));
     setShowSearchModal(false);
-    alert("Patient details loaded successfully!");
+    toast.success("Patient details loaded successfully!");
   };
 
   const handleSave = async () => {
@@ -216,18 +242,37 @@ export default function Prescription() {
     }
 
     try {
-      await addDoc(collection(db, "prescriptions"), {
+      const prescriptionData = {
         ...formData,
+        // Ensure followupRequired is a proper boolean
+        followupRequired: formData.followupRequired === true || formData.followupRequired === "on",
         createdAt: new Date()
-      });
+      };
+
+      console.log("=== PRESCRIPTION SAVE DEBUG ===");
+      console.log("followupRequired:", prescriptionData.followupRequired);
+      console.log("followupDate:", prescriptionData.followupDate);
+      console.log("followupReason:", prescriptionData.followupReason);
+      console.log("Full prescription data:", JSON.stringify(prescriptionData, null, 2));
+      console.log("================================");
+      
+      const docRef = await addDoc(collection(db, "prescriptions"), prescriptionData);
+      console.log("Prescription saved with ID:", docRef.id);
       
       // Also export to Google Sheets
-      await exportToGoogleSheets(formData, "prescription");
+      await exportToGoogleSheets(prescriptionData, "prescription");
       
-      alert("Prescription saved.");
+      // Show followup toast if required, otherwise show generic success
+      if (prescriptionData.followupRequired && prescriptionData.followupDate) {
+        toast.success(`✅ Followup scheduled for ${prescriptionData.followupDate}`);
+      } else {
+        toast.success("✅ Prescription saved successfully!");
+      }
+      
       return true;
     } catch (error) {
       console.error("Error saving prescription:", error);
+      toast.error("❌ Error saving prescription. Please try again.");
       return false;
     }
   };
@@ -236,6 +281,7 @@ export default function Prescription() {
     if (!validateForm()) {
       return;
     }
+    toast.info("Moving to billing form...");
     navigate("/billing", { state: { patient: formData } });
   };
 
@@ -355,11 +401,43 @@ export default function Prescription() {
         </div>
       </div>
 
+      <div className="section-title">Followup (Optional)</div>
+      <div className="followup-section">
+        <label className="checkbox-label">
+          <input 
+            type="checkbox" 
+            name="followupRequired" 
+            checked={formData.followupRequired} 
+            onChange={handleChange}
+          />
+          Followup Required
+        </label>
+        {formData.followupRequired && (
+          <div className="followup-fields">
+            <input 
+              type="date" 
+              name="followupDate" 
+              value={formData.followupDate} 
+              onChange={handleChange}
+              className="followup-date-input"
+            />
+            <input 
+              type="text" 
+              name="followupReason" 
+              placeholder="Reason for followup" 
+              value={formData.followupReason} 
+              onChange={handleChange}
+              className="followup-reason-input"
+            />
+          </div>
+        )}
+      </div>
+
       <div className="button-group">
         <button className="reset-btn" type="button" onClick={handleReset}>
           Reset
         </button>
-        <button className="proceed-btn" type="button" onClick={async () => { const saved = await handleSave(); if (saved) { setTimeout(() => window.print(), 500); } }}>
+        <button className="proceed-btn" type="button" onClick={async () => { const saved = await handleSave(); if (saved) { setTimeout(() => window.print(), 800); } }}>
           Save & Print
         </button>
         <button className="proceed-btn" type="button" onClick={handleContinueToBilling}>

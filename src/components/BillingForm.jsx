@@ -2,6 +2,7 @@ import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import Receipt from "./Receipt";
 import { fetchPatientByUID, findNextAvailableUIDForBilling, searchPatientsByName, searchPatientsByPhone } from "../utils/patientUtils";
 import { exportToGoogleSheets } from "../utils/googleSheetsExport";
@@ -38,7 +39,10 @@ export default function BillingForm() {
     colonoscopyAmount: "",
     other: "",
     otherAmount: "",
-    discount: ""
+    discount: "",
+    followupRequired: false,
+    followupDate: "",
+    followupReason: ""
   });
 
   const [loadingNextUID, setLoadingNextUID] = useState(false);
@@ -85,6 +89,8 @@ const handleProceed = async () => {
   try {
     const billData = {
       ...formData,
+      // Ensure followupRequired is a proper boolean
+      followupRequired: formData.followupRequired === true || formData.followupRequired === "on",
       total,
       finalAmount,
       createdAt: new Date()
@@ -95,9 +101,17 @@ const handleProceed = async () => {
     // Also export to Google Sheets
     await exportToGoogleSheets(billData, "bill");
 
+    // Show followup toast if required, otherwise show generic success
+    if (billData.followupRequired && billData.followupDate) {
+      toast.success(`✅ Followup scheduled for ${billData.followupDate}`);
+    } else {
+      toast.success("✅ Bill saved successfully!");
+    }
+
     setShowReceipt(true);
   } catch (error) {
     console.error("Error saving bill:", error);
+    toast.error("❌ Error saving bill. Please try again.");
   }
 };
   const handleChange = (e) => {
@@ -137,7 +151,7 @@ const handleProceed = async () => {
 
   const handleCheckUID = async () => {
     if (!formData.uid) {
-      alert("Please enter a UID first");
+      toast.warning("Please enter a UID first");
       return;
     }
 
@@ -154,9 +168,20 @@ const handleProceed = async () => {
           address: patient.address || "",
           date: patient.date || ""
         }));
-        alert("Patient details loaded successfully!");
+        toast.success("Patient details loaded successfully!");
+        
+        // Check for pending followup
+        if (patient.followupRequired && patient.followupDate) {
+          const followupDate = new Date(patient.followupDate);
+          const today = new Date();
+          if (followupDate <= today) {
+            toast.warning(`⚠️ Pending followup for ${patient.name}! Due: ${patient.followupDate}. Reason: ${patient.followupReason || "Not specified"}`);
+          } else {
+            toast.info(`📅 Followup scheduled for ${patient.followupDate}`);
+          }
+        }
       } else {
-        alert("No existing patient data found for this UID. Ready for new patient entry.");
+        toast.info("No existing patient data found for this UID. Ready for new patient entry.");
         setFormData((prev) => ({
           ...prev,
           name: "",
@@ -169,7 +194,7 @@ const handleProceed = async () => {
       }
     } catch (error) {
       console.error("Error checking UID:", error);
-      alert("Error checking UID. Please try again.");
+      toast.error("Error checking UID. Please try again.");
     } finally {
       setLoadingCheckUID(false);
     }
@@ -202,7 +227,7 @@ const handleProceed = async () => {
 
   const handleSearchByName = async () => {
     if (!formData.name || formData.name.trim().length === 0) {
-      alert("Please enter a patient name to search");
+      toast.warning("Please enter a patient name to search");
       return;
     }
 
@@ -211,13 +236,14 @@ const handleProceed = async () => {
       const results = await searchPatientsByName(formData.name);
       setSearchResults(results);
       if (results.length === 0) {
-        alert("No patients found with that name");
+        toast.info("No patients found with that name");
       } else {
         setShowSearchModal(true);
+        toast.info(`Found ${results.length} patient(s)`);
       }
     } catch (error) {
       console.error("Error searching by name:", error);
-      alert("Error searching for patients");
+      toast.error("Error searching for patients");
     } finally {
       setLoadingSearch(false);
     }
@@ -225,7 +251,7 @@ const handleProceed = async () => {
 
   const handleSearchByPhone = async () => {
     if (!formData.mobile || formData.mobile.trim().length === 0) {
-      alert("Please enter a phone number to search");
+      toast.warning("Please enter a phone number to search");
       return;
     }
 
@@ -234,13 +260,14 @@ const handleProceed = async () => {
       const results = await searchPatientsByPhone(formData.mobile);
       setSearchResults(results);
       if (results.length === 0) {
-        alert("No patients found with that phone number");
+        toast.info("No patients found with that phone number");
       } else {
         setShowSearchModal(true);
+        toast.info(`Found ${results.length} patient(s)`);
       }
     } catch (error) {
       console.error("Error searching by phone:", error);
-      alert("Error searching for patients");
+      toast.error("Error searching for patients");
     } finally {
       setLoadingSearch(false);
     }
@@ -258,7 +285,7 @@ const handleProceed = async () => {
       date: patient.date || ""
     }));
     setShowSearchModal(false);
-    alert("Patient details loaded successfully!");
+    toast.success("Patient details loaded successfully!");
   };
 
   const calculateTotal = () => {
@@ -299,7 +326,10 @@ const handleProceed = async () => {
       colonoscopyAmount: "",
       other: "",
       otherAmount: "",
-      discount: ""
+      discount: "",
+      followupRequired: false,
+      followupDate: "",
+      followupReason: ""
     });
   };
 
@@ -476,6 +506,38 @@ const handleProceed = async () => {
 
       <div className="discount-row">
         <input type="number" name="discount" placeholder="Discount" value={formData.discount} onChange={handleChange} />
+      </div>
+
+      <div className="section-title">Followup (Optional)</div>
+      <div className="followup-section">
+        <label className="checkbox-label">
+          <input 
+            type="checkbox" 
+            name="followupRequired" 
+            checked={formData.followupRequired} 
+            onChange={handleChange}
+          />
+          Followup Required
+        </label>
+        {formData.followupRequired && (
+          <div className="followup-fields">
+            <input 
+              type="date" 
+              name="followupDate" 
+              value={formData.followupDate} 
+              onChange={handleChange}
+              className="followup-date-input"
+            />
+            <input 
+              type="text" 
+              name="followupReason" 
+              placeholder="Reason for followup" 
+              value={formData.followupReason} 
+              onChange={handleChange}
+              className="followup-reason-input"
+            />
+          </div>
+        )}
       </div>
 
             <div className="total-box">
