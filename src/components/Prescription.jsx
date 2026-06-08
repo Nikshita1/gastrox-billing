@@ -40,19 +40,26 @@ export default function Prescription() {
   useEffect(() => {
     const loadPatient = async () => {
       if (!formData.uid) return;
-      const patient = await fetchPatientByUID(formData.uid);
-      if (patient) {
-        setFormData((prev) => ({
-          ...prev,
-          name: prev.name || patient.name,
-          age: prev.age || patient.age,
-          mobile: prev.mobile || patient.mobile,
-          sex: prev.sex || patient.sex,
-          weight: prev.weight || "",
-          address: prev.address || patient.address,
-          referral: prev.referral || patient.referral,
-          date: prev.date || patient.date
-        }));
+      try {
+        const patient = await fetchPatientByUID(formData.uid);
+        if (patient) {
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || patient.name,
+            age: prev.age || patient.age,
+            mobile: prev.mobile || patient.mobile,
+            sex: prev.sex || patient.sex,
+            weight: prev.weight || "",
+            address: prev.address || patient.address,
+            referral: prev.referral || patient.referral,
+            date: prev.date || patient.date
+          }));
+          console.log("Patient data loaded for UID:", formData.uid);
+        } else {
+          console.log("No patient found for UID:", formData.uid);
+        }
+      } catch (error) {
+        console.error("Error loading patient data:", error);
       }
     };
 
@@ -302,7 +309,10 @@ export default function Prescription() {
           address: "",
           date: getTodayDate(),
           prescription: "",
-          notes: ""
+          notes: "",
+          followupRequired: false,
+          followupDate: "",
+          followupReason: ""
         }));
         // The useEffect will trigger automatically when uid changes and auto-populate if patient exists
       }
