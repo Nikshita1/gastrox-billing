@@ -32,13 +32,13 @@ export default function FollowupTracker() {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const nextWeek = new Date(today);
-      nextWeek.setDate(nextWeek.getDate() + 7);
+      const next10Days = new Date(today);
+      next10Days.setDate(next10Days.getDate() + 10);
 
       console.log("Fetching followups...");
       console.log("Today:", today.toISOString());
       console.log("Tomorrow:", tomorrow.toISOString());
-      console.log("Next Week:", nextWeek.toISOString());
+      console.log("Next 10 Days:", next10Days.toISOString());
 
       // Query prescriptions with followup
       const prescriptionsSnapshot = await getDocs(
@@ -102,7 +102,7 @@ export default function FollowupTracker() {
         } else if (followupDate.getTime() === tomorrow.getTime()) {
           tomorrowFollowups.push(record);
           console.log("Added to TOMORROW");
-        } else if (followupDate < nextWeek) {
+        } else if (followupDate > tomorrow && followupDate <= next10Days) {
           upcomingFollowups.push(record);
           console.log("Added to UPCOMING");
         }
@@ -344,12 +344,12 @@ export default function FollowupTracker() {
         {/* Upcoming Followups */}
         <div className="followup-section-card">
           <div className="section-header upcoming">
-            <span>🟢 Upcoming Followups (Next 7 days)</span>
+            <span>🟢 Upcoming Followups (Next 10 days)</span>
             <span className="count">{followups.upcoming.length}</span>
           </div>
           <div className="followups-list">
             {followups.upcoming.length === 0 ? (
-              <p className="no-data">No upcoming followups in the next 7 days</p>
+              <p className="no-data">No upcoming followups in the next 10 days</p>
             ) : (
               followups.upcoming.map(record => (
                 <FollowupCard key={record.id} record={record} />
