@@ -295,7 +295,8 @@ export default function Prescription() {
   const handleNextUID = async () => {
     setLoadingNextUID(true);
     try {
-      const currentUID = formData.uid || "GX-000"; // Start from GX-000 if empty
+      // Trim the current UID to ensure no whitespace issues
+      const currentUID = (formData.uid && formData.uid.trim()) || "GX-000";
       const nextUID = await findNextAvailableUID(currentUID);
       if (nextUID) {
         setFormData((prev) => ({

@@ -69,32 +69,43 @@ export async function fetchPatientByUID(uid) {
 }
 
 export async function findNextAvailableUID(currentUID) {
-  if (!currentUID) {
-    return "GX-001"; // Default starting UID
-  }
-
   try {
-    let nextUID = incrementUID(currentUID);
-    let maxAttempts = 50; // Search up to 50 UIDs ahead
-    let attempts = 0;
-
-    // Search for the next UID that doesn't have patient data (empty slot)
-    while (attempts < maxAttempts) {
-      const patient = await fetchPatientByUID(nextUID);
-      if (!patient) {
-        // Found an empty UID - return it as the next available
-        return nextUID;
-      }
-      // Has patient data, continue searching
-      nextUID = incrementUID(nextUID);
-      attempts++;
+    // Trim whitespace from input
+    const trimmedUID = currentUID ? currentUID.trim() : "";
+    
+    // If currentUID is provided and not default, increment it
+    if (trimmedUID && trimmedUID !== "GX-000") {
+      return incrementUID(trimmedUID);
     }
+    
+    // Otherwise, find the highest used UID and return the next one
+    const billSnapshot = await getDocs(collection(db, "bills"));
+    const prescriptionSnapshot = await getDocs(collection(db, "prescriptions"));
+    
+    const allRecords = [
+      ...billSnapshot.docs.map(doc => doc.data()),
+      ...prescriptionSnapshot.docs.map(doc => doc.data())
+    ];
 
-    // If no empty UID found in the range, return the last checked UID
-    return nextUID;
+    // Extract UID numbers for "GX-" prefix
+    let maxNum = 0;
+    allRecords.forEach(record => {
+      const uid = record.uid || "";
+      if (uid.startsWith("GX-")) {
+        const num = parseInt(uid.substring(3), 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+
+    // Return the next UID after the highest used one
+    const nextNum = (maxNum + 1).toString().padStart(3, "0");
+    return "GX-" + nextNum;
   } catch (error) {
     console.error("Error finding next UID:", error);
-    return incrementUID(currentUID);
+    // Fallback: start from GX-001 if something goes wrong
+    return "GX-001";
   }
 }
 
