@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { toast } from "react-toastify";
+import { playClick, playSuccess, playError } from "../utils/soundEffects";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -34,9 +35,11 @@ export default function Home() {
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
+        playSuccess();
         toast.success("Account created successfully!");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+        playSuccess();
         toast.success("Logged in successfully!");
       }
       setShowLoginModal(false);
@@ -45,6 +48,7 @@ export default function Home() {
       setIsSignUp(false);
     } catch (error) {
       console.error("Auth error:", error);
+      playError();
       if (error.code === "auth/user-not-found") {
         toast.error("User not found. Please sign up first.");
       } else if (error.code === "auth/wrong-password") {
@@ -66,9 +70,11 @@ export default function Home() {
 
     try {
       await signOut(auth);
+      playSuccess();
       toast.success("Logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
+      playError();
       toast.error("Error logging out");
     }
   };
@@ -94,27 +100,27 @@ export default function Home() {
         {!user ? (
           <button 
             className="hero-btn login-btn"
-            onClick={() => setShowLoginModal(true)}
+            onClick={() => { playClick(); setShowLoginModal(true); }}
           >
             🔐 Login
           </button>
         ) : (
           <>
-            <Link to="/prescription" className="hero-btn green-btn">
+            <Link to="/prescription" className="hero-btn green-btn" onClick={playClick}>
               📝 New Prescription
             </Link>
 
-            <Link to="/billing" className="hero-btn blue-btn">
+            <Link to="/billing" className="hero-btn blue-btn" onClick={playClick}>
               💰 Direct Billing
             </Link>
 
-            <Link to="/followups" className="hero-btn orange-btn">
+            <Link to="/followups" className="hero-btn orange-btn" onClick={playClick}>
               📋 Followups
             </Link>
 
             <button 
               className="hero-btn logout-btn"
-              onClick={handleLogout}
+              onClick={() => { playClick(); handleLogout(); }}
             >
               🚪 Logout
             </button>
@@ -130,7 +136,7 @@ export default function Home() {
               <h2>{isSignUp ? "Sign Up" : "Login"}</h2>
               <button
                 className="modal-close"
-                onClick={() => setShowLoginModal(false)}
+                onClick={() => { playClick(); setShowLoginModal(false); }}
               >
                 ✕
               </button>
@@ -176,7 +182,7 @@ export default function Home() {
                 <button
                   type="button"
                   className="toggle-mode-btn"
-                  onClick={() => setIsSignUp(!isSignUp)}
+                  onClick={() => { playClick(); setIsSignUp(!isSignUp); }}
                   disabled={isAuthLoading}
                 >
                   {isSignUp ? "Login here" : "Sign up here"}
