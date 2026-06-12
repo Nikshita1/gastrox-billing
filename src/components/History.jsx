@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { playExport } from "../utils/soundEffects";
 
 export default function History({ onBack }) {
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ export default function History({ onBack }) {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
 
+    playExport();
     alert("Bills exported to CSV successfully!");
   };
 

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
+import { playWarning } from "./utils/soundEffects";
 import "react-toastify/dist/ReactToastify.css";
 import Home from "./components/Home";
 import BillingForm from "./components/BillingForm";
@@ -62,6 +63,7 @@ export default function App() {
       logoutTimer.current = setTimeout(async () => {
         try {
           if (auth.currentUser) {
+            playWarning();
             await signOut(auth);
             toast.info("Logged out due to 30 minutes of inactivity.");
             navigate("/");

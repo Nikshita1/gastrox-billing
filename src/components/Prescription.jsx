@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { db } from "../firebase";
 import { fetchPatientByUID, findNextAvailableUID, searchPatientsByName, searchPatientsByPhone } from "../utils/patientUtils";
 import { exportToGoogleSheets } from "../utils/googleSheetsExport";
+import { playSuccess, playError, playClick, playSave } from "../utils/soundEffects";
 
 export default function Prescription() {
   const navigate = useNavigate();
@@ -271,14 +272,17 @@ export default function Prescription() {
       
       // Show followup toast if required, otherwise show generic success
       if (prescriptionData.followupRequired && prescriptionData.followupDate) {
+        playSuccess();
         toast.success(`✅ Followup scheduled for ${prescriptionData.followupDate}`);
       } else {
+        playSuccess();
         toast.success("✅ Prescription saved successfully!");
       }
       
       return true;
     } catch (error) {
       console.error("Error saving prescription:", error);
+      playError();
       toast.error("❌ Error saving prescription. Please try again.");
       return false;
     }

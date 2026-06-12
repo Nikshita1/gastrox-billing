@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import Receipt from "./Receipt";
 import { fetchPatientByUID, findNextAvailableUIDForBilling, searchPatientsByName, searchPatientsByPhone } from "../utils/patientUtils";
 import { exportToGoogleSheets } from "../utils/googleSheetsExport";
+import { playSuccess, playError, playExport } from "../utils/soundEffects";
 import heroImage from "../assets/hero.png";
 
 export default function BillingForm() {
@@ -103,14 +104,17 @@ const handleProceed = async () => {
 
     // Show followup toast if required, otherwise show generic success
     if (billData.followupRequired && billData.followupDate) {
+      playSuccess();
       toast.success(`✅ Followup scheduled for ${billData.followupDate}`);
     } else {
+      playSuccess();
       toast.success("✅ Bill saved successfully!");
     }
 
     setShowReceipt(true);
   } catch (error) {
     console.error("Error saving bill:", error);
+    playError();
     toast.error("❌ Error saving bill. Please try again.");
   }
 };
