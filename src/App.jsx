@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { onAuthStateChanged } from "firebase/auth";
+import { useEffect, useState, useRef } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import "react-toastify/dist/ReactToastify.css";
 import Home from "./components/Home";
@@ -35,6 +35,8 @@ function ProtectedRoute({ component: Component }) {
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const logoutTimer = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, () => {
@@ -43,6 +45,49 @@ export default function App() {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    // Auto-logout after 30 minutes (in ms)
+    const TIMEOUT = 30 * 60 * 1000;
+
+    const clearLogoutTimer = () => {
+      if (logoutTimer.current) {
+        clearTimeout(logoutTimer.current);
+        logoutTimer.current = null;
+      }
+    };
+
+    const startLogoutTimer = () => {
+      clearLogoutTimer();
+      logoutTimer.current = setTimeout(async () => {
+        try {
+          if (auth.currentUser) {
+            await signOut(auth);
+            toast.info("Logged out due to 30 minutes of inactivity.");
+            navigate("/");
+          }
+        } catch (err) {
+          console.error("Auto-logout failed:", err);
+        }
+      }, TIMEOUT);
+    };
+
+    const resetTimer = () => {
+      // Only start/reset timer if someone is signed in
+      if (auth.currentUser) startLogoutTimer();
+    };
+
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+    events.forEach((ev) => window.addEventListener(ev, resetTimer));
+
+    // Start the timer initially if user is signed in
+    if (auth.currentUser) startLogoutTimer();
+
+    return () => {
+      clearLogoutTimer();
+      events.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [navigate]);
 
   if (loading) {
     return <div className="loading-spinner">Loading...</div>;

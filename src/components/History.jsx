@@ -150,6 +150,7 @@ export default function History({ onBack }) {
       </div>
 
       {/* 📋 Table */}
+      <div className="history-table-wrapper">
       <table className="history-table" width="100%" border="1" cellPadding="10">
         <thead style={{ background: "#f2f2f2" }}>
           <tr>
@@ -185,6 +186,7 @@ export default function History({ onBack }) {
           ))}
         </tbody>
       </table>
+      </div>
 
     </div>
   );

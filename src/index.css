@@ -660,6 +660,94 @@ body {
   color: #4a5568;
 }
 
+/* History page styles */
+.history-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  background: #fff;
+  padding: 24px;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100vh;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.history-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.history-search {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.history-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.history-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px 0;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.history-table th,
+.history-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e6eef7;
+  font-size: 14px;
+}
+
+.history-table thead th {
+  background: #f2f2f2;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .history-controls { flex-direction: column; align-items: stretch; }
+  .history-stats { flex-direction: column; }
+  .history-table { min-width: 0; }
+}
+
 .clinic-contact,
 .receipt-header-right {
   text-align: right;
@@ -1155,20 +1243,21 @@ input[type="date"] {
 }
 
 .history-container {
-  width: min(100%, 960px);
+  width: 100%;
   max-width: 100%;
-  margin: 20px auto;
+  margin: 0;
   background: #fff;
   padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100vh;
 }
 
 .history-header {
   background: linear-gradient(135deg, #0f5132, #198754);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 18px;
   color: #fff;
 }
 
