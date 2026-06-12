@@ -3,25 +3,59 @@
  * Uses Web Audio API to generate simple sound effects without needing audio files
  */
 
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioContext = null;
+let contextResumed = false;
+
+const getAudioContext = () => {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+};
+
+const resumeAudioContext = () => {
+  if (contextResumed) return;
+  
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      contextResumed = true;
+      console.log('Audio context resumed');
+    });
+  } else {
+    contextResumed = true;
+  }
+};
+
+// Resume audio on any user interaction
+if (typeof window !== 'undefined') {
+  const events = ['click', 'touchstart', 'keydown'];
+  events.forEach(event => {
+    window.addEventListener(event, resumeAudioContext, { once: true });
+  });
+}
 
 // Helper function to create a beep sound
 const playTone = (frequency, duration, type = 'sine', volume = 0.3) => {
   try {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    resumeAudioContext();
+    const ctx = getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    gainNode.connect(ctx.destination);
 
     oscillator.frequency.value = frequency;
     oscillator.type = type;
 
-    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
 
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + duration);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration);
+    
+    console.log(`Played tone: ${frequency}Hz for ${duration}s`);
   } catch (error) {
     console.error('Error playing tone:', error);
   }
