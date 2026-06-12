@@ -36,7 +36,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Helper function to create a beep sound
-const playTone = (frequency, duration, type = 'sine', volume = 0.3) => {
+const playTone = (frequency, duration, type = 'sine', volume = 0.5) => {
   try {
     resumeAudioContext();
     const ctx = getAudioContext();
@@ -55,45 +55,51 @@ const playTone = (frequency, duration, type = 'sine', volume = 0.3) => {
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
     
-    console.log(`Played tone: ${frequency}Hz for ${duration}s`);
+    console.log(`🔊 Played tone: ${frequency}Hz for ${duration}s at volume ${volume}`);
   } catch (error) {
-    console.error('Error playing tone:', error);
+    console.error('🔊 Error playing tone:', error);
   }
 };
 
 // Success sound (positive upward beep)
 export const playSuccess = () => {
-  playTone(523, 0.1, 'sine', 0.3); // C5
-  setTimeout(() => playTone(659, 0.1, 'sine', 0.3), 100); // E5
-  setTimeout(() => playTone(784, 0.15, 'sine', 0.3), 200); // G5
+  console.log('🔊 Playing success sound');
+  playTone(523, 0.1, 'sine', 0.5); // C5
+  setTimeout(() => playTone(659, 0.1, 'sine', 0.5), 100); // E5
+  setTimeout(() => playTone(784, 0.15, 'sine', 0.5), 200); // G5
 };
 
 // Error sound (descending beep)
 export const playError = () => {
-  playTone(600, 0.1, 'sine', 0.3);
-  setTimeout(() => playTone(400, 0.2, 'sine', 0.3), 100);
+  console.log('🔊 Playing error sound');
+  playTone(600, 0.1, 'sine', 0.5);
+  setTimeout(() => playTone(400, 0.2, 'sine', 0.5), 100);
 };
 
 // Click sound (soft pop)
 export const playClick = () => {
-  playTone(800, 0.05, 'sine', 0.15);
+  console.log('🔊 Playing click sound');
+  playTone(800, 0.05, 'sine', 0.3);
 };
 
 // Warning sound (urgent beep for auto-logout)
 export const playWarning = () => {
-  playTone(400, 0.1, 'sine', 0.4);
-  setTimeout(() => playTone(400, 0.1, 'sine', 0.4), 120);
-  setTimeout(() => playTone(600, 0.15, 'sine', 0.4), 240);
+  console.log('🔊 Playing warning sound');
+  playTone(400, 0.1, 'sine', 0.6);
+  setTimeout(() => playTone(400, 0.1, 'sine', 0.6), 120);
+  setTimeout(() => playTone(600, 0.15, 'sine', 0.6), 240);
 };
 
 // Save/Confirmation sound (bell-like)
 export const playSave = () => {
-  playTone(523, 0.08, 'sine', 0.2);
-  setTimeout(() => playTone(523, 0.08, 'sine', 0.2), 85);
+  console.log('🔊 Playing save sound');
+  playTone(523, 0.08, 'sine', 0.4);
+  setTimeout(() => playTone(523, 0.08, 'sine', 0.4), 85);
 };
 
 // Export sound (whoosh-like)
 export const playExport = () => {
-  playTone(1000, 0.05, 'sine', 0.15);
-  setTimeout(() => playTone(800, 0.05, 'sine', 0.15), 50);
+  console.log('🔊 Playing export sound');
+  playTone(1000, 0.05, 'sine', 0.4);
+  setTimeout(() => playTone(800, 0.05, 'sine', 0.4), 50);
 };
