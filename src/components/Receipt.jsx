@@ -72,6 +72,19 @@ export default function Receipt({ formData, total, finalAmount, onBack }) {
             <div className="service-col-price">{formData.colonoscopyAmount || 0}</div>
           </div>
         )}
+ {formData.sigmoidoscopy && (
+          <div className="service-line">
+            <div className="service-col-name">Sigmoidoscopy</div>
+            <div className="service-col-price">{formData.sigmoidoscopyAmount || 0}</div>
+          </div>
+        )}
+
+        {formData.ecg && (
+          <div className="service-line">
+            <div className="service-col-name">ECG</div>
+            <div className="service-col-price">{formData.ecgAmount || 0}</div>
+          </div>
+        )}
 
         {formData.other && (
           <div className="service-line">

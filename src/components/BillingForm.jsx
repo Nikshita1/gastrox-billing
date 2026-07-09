@@ -38,6 +38,10 @@ export default function BillingForm() {
     fibroscanAmount: "",
     colonoscopy: false,
     colonoscopyAmount: "",
+    sigmoidoscopy: false,
+    sigmoidoscopyAmount: "",
+    ecg:false,
+    ecgAmount:"",
     other: "",
     otherAmount: "",
     discount: "",
@@ -306,6 +310,12 @@ const handleProceed = async () => {
     if (formData.colonoscopy) {
       total += Number(formData.colonoscopyAmount || 0);
     }
+     if (formData.sigmoidoscopy) {
+      total += Number(formData.sigmoidoscopyAmount || 0);
+    }
+     if (formData.ecg) {
+      total += Number(formData.ecgAmount || 0);
+    }
     total += Number(formData.otherAmount || 0);
     return total;
   };
@@ -328,6 +338,10 @@ const handleProceed = async () => {
       fibroscanAmount: "",
       colonoscopy: false,
       colonoscopyAmount: "",
+      sigmoidoscopy:false,
+      sigmoidoscopyAmount:"",
+      ecg:false,
+      ecgAmount:"",
       other: "",
       otherAmount: "",
       discount: "",
@@ -482,7 +496,16 @@ const handleProceed = async () => {
           <label>Colonoscopy</label>
           <input type="number" name="colonoscopyAmount" value={formData.colonoscopyAmount} placeholder="₹ 0" onChange={handleChange} />
         </div>
-
+ <div className="service-item">
+          <input type="checkbox" name="sigmoidoscopy" checked={formData.sigmoidoscopy} onChange={handleChange} />
+          <label>Sigmoidoscopy</label>
+          <input type="number" name="sigmoidoscopyAmount" value={formData.sigmoidoscopyAmount} placeholder="₹ 0" onChange={handleChange} />
+        </div>
+        <div className="service-item">
+          <input type="checkbox" name="ecg" checked={formData.ecg} onChange={handleChange} />
+          <label>ECG</label>
+          <input type="number" name="ecgAmount" value={formData.ecgAmount} placeholder="₹ 0" onChange={handleChange} />
+        </div>
         <div className="service-item">
           <span></span>
           <input type="text" name="other" value={formData.other} placeholder="Other Service" onChange={handleChange} />

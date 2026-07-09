@@ -25,6 +25,8 @@ export const exportToGoogleSheets = async (billData, type = "bill") => {
           endoscopy: billData.endoscopy ? `Yes (₹${billData.endoscopyAmount || 0})` : "No",
           fibroscan: billData.fibroscan ? `Yes (₹${billData.fibroscanAmount || 0})` : "No",
           colonoscopy: billData.colonoscopy ? `Yes (₹${billData.colonoscopyAmount || 0})` : "No",
+          sigmoidoscopy: billData.sigmoidoscopy ? `Yes (₹${billData.sigmoidoscopyAmount || 0})` : "No",
+          ecg: billData.ecg ? `Yes (₹${billData.ecgAmount || 0})` : "No",
           other: billData.other || "",
           paymentMode: billData.paymentMode || "",
           total: billData.total || 0,

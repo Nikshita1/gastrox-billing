@@ -61,6 +61,12 @@ export default function History({ onBack }) {
     if (bill.colonoscopy) {
       services.push(`Colonoscopy ₹${bill.colonoscopyAmount || 0}`);
     }
+     if (bill.sigmoidoscopy) {
+      services.push(`Sigmoidoscopy ₹${bill.sigmoidoscopyAmount || 0}`);
+    }
+     if (bill.ecg) {
+      services.push(`ECG ₹${bill.ecgAmount || 0}`);
+    }
     if (bill.other) {
       services.push(`${bill.other} ₹${bill.otherAmount || 0}`);
     }
