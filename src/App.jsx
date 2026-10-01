@@ -12,6 +12,7 @@ import History from "./components/History";
 import FollowupTracker from "./components/FollowupTracker";
 import Receipt from "./components/Receipt";
 import PasswordGate from "./components/PasswordGate";
+import DataEntry from "./components/DataEntry";
 import "./index.css";
 
 // Protected Route Component
@@ -142,6 +143,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/billing" element={<ProtectedRoute component={BillingForm} />} />
+        <Route path="/data-entry" element={<ProtectedRoute component={DataEntry} />} />
         <Route path="/prescription" element={<ProtectedRoute component={Prescription} />} />
         <Route path="/followups" element={<ProtectedRoute component={FollowupTracker} />} />
         <Route path="/history" element={<HistoryProtectedRoute component={History} />} />

@@ -181,6 +181,10 @@ export default function Home() {
               💰 Direct Billing
             </Link>
 
+            <Link to="/data-entry" className="hero-btn secondary-btn" onClick={playClick}>
+              🧾 Patient Data Entry
+            </Link>
+
             <Link to="/followups" className="hero-btn orange-btn" onClick={playClick}>
               📋 Followups
             </Link>
