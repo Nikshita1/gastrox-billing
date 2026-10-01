@@ -15,6 +15,12 @@ const serviceOptions = [
   { key: "ecg", label: "ECG" }
 ];
 
+const paymentOptions = [
+  { key: "cash", label: "Cash" },
+  { key: "sbi", label: "SBI" },
+  { key: "bob", label: "BOB" }
+];
+
 const getDateKey = (value) => {
   if (!value) return "";
   const normalized = String(value).trim();
@@ -52,7 +58,7 @@ const createInitialForm = () => ({
   age: "",
   date: getTodayDate(),
   referral: "",
-  paymentMode: "Cash",
+  paymentBreakdown: Object.fromEntries(paymentOptions.map(({ key }) => [key, { selected: false, amount: "" }])),
   discount: "",
   other: "",
   otherAmount: "",
@@ -121,6 +127,11 @@ export default function DataEntry() {
   ), 0) + Number(formData.otherAmount || 0);
   const discount = Number(formData.discount || 0);
   const finalAmount = Math.max(0, total - discount);
+  const selectedPaymentOptions = paymentOptions.filter(({ key }) => formData.paymentBreakdown[key].selected);
+  const paymentTotal = selectedPaymentOptions.reduce((sum, { key }) => (
+    sum + Number(formData.paymentBreakdown[key].amount || 0)
+  ), 0);
+  const paymentDifference = Math.round((finalAmount - paymentTotal) * 100) / 100;
 
   const filteredRecords = useMemo(() => records.filter((record) => {
     const recordDate = getDateKey(record.date);
@@ -144,6 +155,19 @@ export default function DataEntry() {
       else if (nextValue.startsWith("GX-")) setUidPrefix("GX");
     }
     setFormData((current) => ({ ...current, [name]: nextValue }));
+  };
+
+  const handlePaymentChange = (key, field, value) => {
+    setFormData((current) => ({
+      ...current,
+      paymentBreakdown: {
+        ...current.paymentBreakdown,
+        [key]: {
+          ...current.paymentBreakdown[key],
+          [field]: value
+        }
+      }
+    }));
   };
 
   const loadPatient = async () => {
@@ -204,9 +228,25 @@ export default function DataEntry() {
       toast.warning("Discount cannot be greater than the total.");
       return;
     }
+    if (finalAmount > 0 && selectedPaymentOptions.length === 0) {
+      toast.warning("Select at least one payment method.");
+      return;
+    }
+    if (selectedPaymentOptions.some(({ key }) => Number(formData.paymentBreakdown[key].amount) <= 0)) {
+      toast.warning("Enter an amount greater than zero for each selected payment method.");
+      return;
+    }
+    if (Math.round(paymentTotal * 100) !== Math.round(finalAmount * 100)) {
+      toast.warning(`Payment amounts must equal the final amount of ₹${finalAmount.toLocaleString("en-IN")}.`);
+      return;
+    }
 
     setIsSaving(true);
     try {
+      const savedPaymentBreakdown = Object.fromEntries(selectedPaymentOptions.map(({ key, label }) => [
+        key,
+        { label, amount: Number(formData.paymentBreakdown[key].amount) }
+      ]));
       const billData = {
         ...formData,
         uid: formData.uid.trim(),
@@ -214,6 +254,10 @@ export default function DataEntry() {
         mobile: formData.mobile.trim(),
         age: Number(formData.age),
         referral: formData.referral.trim(),
+        paymentMode: selectedPaymentOptions
+          .map(({ key, label }) => `${label} ₹${Number(formData.paymentBreakdown[key].amount).toLocaleString("en-IN")}`)
+          .join(", ") || "Unpaid",
+        paymentBreakdown: savedPaymentBreakdown,
         discount,
         total,
         finalAmount,
@@ -380,11 +424,47 @@ export default function DataEntry() {
               </div>
 
               <div className="data-modal-payment-row">
-                <label>Payment mode
-                  <select name="paymentMode" value={formData.paymentMode} onChange={handleChange}>
-                    <option>Cash</option><option>Online</option><option>Both</option>
-                  </select>
-                </label>
+                <div className="data-payments-panel">
+                  <div className="data-payments-heading">
+                    <strong>Payment split</strong>
+                    <span>Amounts should equal final amount</span>
+                  </div>
+                  <div className="data-payment-options">
+                    {paymentOptions.map(({ key, label }) => (
+                      <label className="data-payment-method" key={key}>
+                        <span>
+                          <input
+                            type="checkbox"
+                            checked={formData.paymentBreakdown[key].selected}
+                            onChange={(event) => handlePaymentChange(key, "selected", event.target.checked)}
+                          />
+                          {label}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.paymentBreakdown[key].amount}
+                          onChange={(event) => handlePaymentChange(key, "amount", event.target.value)}
+                          placeholder="₹ Amount"
+                          aria-label={`${label} payment amount`}
+                          disabled={!formData.paymentBreakdown[key].selected}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <div className="data-payment-summary">
+                    <span>Payment total</span>
+                    <strong>₹{paymentTotal.toLocaleString("en-IN")} / ₹{finalAmount.toLocaleString("en-IN")}</strong>
+                    <small className={paymentDifference === 0 ? "balanced" : "unbalanced"}>
+                      {paymentDifference === 0
+                        ? "Amounts match"
+                        : paymentDifference > 0
+                          ? `₹${paymentDifference.toLocaleString("en-IN")} remaining`
+                          : `₹${Math.abs(paymentDifference).toLocaleString("en-IN")} over`}
+                    </small>
+                  </div>
+                </div>
                 <label>Discount
                   <input type="number" min="0" name="discount" value={formData.discount} onChange={handleChange} />
                 </label>
