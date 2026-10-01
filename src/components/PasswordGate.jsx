@@ -4,9 +4,9 @@ const HISTORY_UNLOCK_KEY = "historyUnlocked";
 const HISTORY_PHONE_KEY = "historyAccessPhone";
 const HISTORY_OTP_KEY = "historyAccessOtp";
 const HISTORY_TARGET_KEY = "historyAccessOtpTarget";
+const ADMIN_PHONE = "9876543210";
 
 const normalizePhone = (value = "") => value.replace(/\D/g, "");
-
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
 export default function PasswordGate({ onUnlock }) {
@@ -25,14 +25,15 @@ export default function PasswordGate({ onUnlock }) {
 
   const registeredPhone =
     typeof window !== "undefined"
-      ? normalizePhone(localStorage.getItem(HISTORY_PHONE_KEY) || "")
-      : "";
+      ? normalizePhone(localStorage.getItem(HISTORY_PHONE_KEY) || ADMIN_PHONE)
+      : ADMIN_PHONE;
 
   const sendOtpTo = (targetPhone) => {
     const normalizedTarget = normalizePhone(targetPhone);
+    const expectedAdminPhone = normalizePhone(ADMIN_PHONE);
 
-    if (!normalizedTarget || normalizedTarget.length < 10) {
-      setError("Please enter a valid contact number.");
+    if (normalizedTarget !== expectedAdminPhone) {
+      setError("OTP can only be sent to the admin contact number assigned to this clinic.");
       return;
     }
 
@@ -50,24 +51,20 @@ export default function PasswordGate({ onUnlock }) {
     e.preventDefault();
 
     const normalizedPhoneValue = normalizePhone(phone);
-    const protectedPhone = registeredPhone || normalizedPhoneValue;
 
     if (!otpSent) {
-      if (registeredPhone && normalizedPhoneValue && normalizedPhoneValue !== registeredPhone) {
-        setError("This contact number is not registered for the history access.");
+      if (!normalizedPhoneValue) {
+        setError("Please enter the admin contact number.");
         return;
       }
 
-      if (!protectedPhone) {
-        setError("Please enter the registered contact number.");
+      if (normalizedPhoneValue !== normalizePhone(ADMIN_PHONE)) {
+        setError("This number is not authorized for history access.");
         return;
       }
 
-      if (!registeredPhone) {
-        localStorage.setItem(HISTORY_PHONE_KEY, protectedPhone);
-      }
-
-      sendOtpTo(protectedPhone);
+      localStorage.setItem(HISTORY_PHONE_KEY, normalizePhone(ADMIN_PHONE));
+      sendOtpTo(normalizedPhoneValue);
       return;
     }
 
@@ -90,8 +87,8 @@ export default function PasswordGate({ onUnlock }) {
     const safeNewPhone = normalizePhone(newPhone);
 
     if (!otpSent) {
-      if (registeredPhone && safeCurrentPhone !== registeredPhone) {
-        setError("The current number does not match the registered owner.");
+      if (safeCurrentPhone !== normalizePhone(ADMIN_PHONE)) {
+        setError("The current number must match the clinic admin owner number.");
         return;
       }
 
@@ -100,11 +97,8 @@ export default function PasswordGate({ onUnlock }) {
         return;
       }
 
-      if (!registeredPhone && !safeCurrentPhone) {
-        // first-time setup for a new owner
-      }
-
-      sendOtpTo(safeNewPhone);
+      // The admin number is fixed, so we only allow the owner to update the number if they match the official admin phone.
+      sendOtpTo(ADMIN_PHONE);
       return;
     }
 
@@ -114,7 +108,7 @@ export default function PasswordGate({ onUnlock }) {
       return;
     }
 
-    const finalPhone = pendingTarget || safeNewPhone;
+    const finalPhone = normalizePhone(ADMIN_PHONE);
     localStorage.setItem(HISTORY_PHONE_KEY, finalPhone);
     setPhone(finalPhone);
     setCurrentPhone("");
@@ -124,7 +118,7 @@ export default function PasswordGate({ onUnlock }) {
     setPendingTarget("");
     setMode("unlock");
     setError("");
-    setInfo(`Contact number updated to ${finalPhone}. You can now unlock with the new number.`);
+    setInfo(`Admin contact number is locked to ${finalPhone}.`);
   };
 
   const resetOtpState = () => {
@@ -156,14 +150,14 @@ export default function PasswordGate({ onUnlock }) {
       <div className="password-gate-box">
         <h2>🔒 History Access</h2>
         <p>
-          This history page is protected. Enter your registered contact number and verify the OTP to continue.
+          This history page is protected. Only the clinic admin phone can unlock it.
         </p>
 
         {mode === "unlock" ? (
           <form onSubmit={handleUnlockSubmit}>
             <input
               type="tel"
-              placeholder="Registered contact number"
+              placeholder="Admin contact number"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="password-input"
@@ -189,14 +183,14 @@ export default function PasswordGate({ onUnlock }) {
             </button>
 
             <button type="button" className="secondary-btn small-btn" onClick={switchToChange}>
-              Change contact number
+              Change owner access
             </button>
           </form>
         ) : (
           <form onSubmit={handlePhoneChangeSubmit}>
             <input
               type="tel"
-              placeholder="Current registered number"
+              placeholder="Current admin number"
               value={currentPhone}
               onChange={(e) => setCurrentPhone(e.target.value)}
               className="password-input"
@@ -205,7 +199,7 @@ export default function PasswordGate({ onUnlock }) {
 
             <input
               type="tel"
-              placeholder="New contact number"
+              placeholder="New admin number"
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
               className="password-input"
@@ -215,7 +209,7 @@ export default function PasswordGate({ onUnlock }) {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="Enter OTP sent to new number"
+                placeholder="Enter OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 className="password-input"
@@ -226,7 +220,7 @@ export default function PasswordGate({ onUnlock }) {
             {error && <div className="error-message">{error}</div>}
 
             <button type="submit" className="primary-btn">
-              {otpSent ? "Confirm Number Change" : "Send OTP to New Number"}
+              {otpSent ? "Confirm Admin Update" : "Send OTP to Admin"}
             </button>
 
             <button type="button" className="secondary-btn small-btn" onClick={switchToUnlock}>
