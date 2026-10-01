@@ -44,7 +44,6 @@ function HistoryProtectedRoute({ component: Component }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-      setIsUnlocked(sessionStorage.getItem("historyUnlocked") === "true");
     });
 
     return () => unsubscribe();
