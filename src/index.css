@@ -108,6 +108,14 @@ body {
     0 0 30px rgba(239, 68, 68, 0.7);
 }
 
+.secondary-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: 2px solid #8b5cf6;
+  box-shadow:
+    0 0 10px #8b5cf6,
+    0 0 30px rgba(139, 92, 246, 0.7);
+}
+
 /* Login Modal */
 .modal-overlay {
   position: fixed;

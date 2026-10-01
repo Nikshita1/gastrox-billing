@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
+import { Link } from "react-router-dom";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from "firebase/auth";
 import { auth } from "../firebase";
 import { toast } from "react-toastify";
 import { playClick, playSuccess, playError } from "../utils/soundEffects";
 
 export default function Home() {
-  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -14,6 +21,11 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordChanging, setIsPasswordChanging] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -80,6 +92,60 @@ export default function Home() {
     }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+
+    if (!auth.currentUser || !auth.currentUser.email) {
+      toast.error("You need to be logged in to change your password.");
+      return;
+    }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.warning("Please fill in your current password and new password details.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+
+    setIsPasswordChanging(true);
+
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+
+      playSuccess();
+      toast.success("Password updated successfully!");
+      setShowChangePasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Password change error:", error);
+      playError();
+
+      if (error.code === "auth/wrong-password") {
+        toast.error("Current password is incorrect.");
+      } else if (error.code === "auth/requires-recent-login") {
+        toast.error("Please log out and log back in before changing your password.");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("New password should be at least 6 characters.");
+      } else {
+        toast.error(error.message || "Unable to change password right now.");
+      }
+    } finally {
+      setIsPasswordChanging(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading-spinner">Loading...</div>;
   }
@@ -119,6 +185,13 @@ export default function Home() {
               📋 Followups
             </Link>
 
+            <button
+              className="hero-btn secondary-btn"
+              onClick={() => { playClick(); setShowChangePasswordModal(true); }}
+            >
+              🔑 Change Password
+            </button>
+
             <button 
               className="hero-btn logout-btn"
               onClick={() => { playClick(); handleLogout(); }}
@@ -128,6 +201,68 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {showChangePasswordModal && (
+        <div className="modal-overlay" onClick={() => setShowChangePasswordModal(false)}>
+          <div className="login-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="login-modal-header">
+              <h2>Change Password</h2>
+              <button
+                className="modal-close"
+                onClick={() => { playClick(); setShowChangePasswordModal(false); }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="login-modal-form">
+              <div className="form-group">
+                <label>Current Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  disabled={isPasswordChanging}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>New Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={isPasswordChanging}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isPasswordChanging}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="login-modal-btn"
+                disabled={isPasswordChanging}
+              >
+                {isPasswordChanging ? "Updating..." : "Update Password"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Login Modal */}
       {showLoginModal && (
