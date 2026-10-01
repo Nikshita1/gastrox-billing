@@ -286,6 +286,7 @@ export default function DataEntry() {
           <strong>Patient records</strong>
         </div>
         <div className="data-workspace-actions">
+          <Link to="/" className="data-secondary-action">Home</Link>
           <Link to="/history" className="data-secondary-action">History</Link>
           <button type="button" className="data-add-action" onClick={() => setIsEntryOpen(true)}>＋ Add record</button>
         </div>
