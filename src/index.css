@@ -2462,3 +2462,513 @@ input[type="date"] {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.6);
 }
+
+.data-workspace {
+  min-height: 100vh;
+  padding: 0 28px 30px;
+  background: #f3f6f2;
+  color: #1d2a22;
+}
+
+.data-workspace-header {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #dce4dc;
+}
+
+.data-brandline,
+.data-workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.data-brandline {
+  color: #718078;
+  font-size: 13px;
+}
+
+.data-brandline strong {
+  color: #26372d;
+  font-weight: 650;
+}
+
+.data-home-link,
+.data-secondary-action {
+  color: #30533d;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.data-add-action,
+.data-secondary-action,
+.data-clear-action,
+.data-cancel-action {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #cbd8cc;
+  border-radius: 5px;
+  background: #fff;
+  color: #284433;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.data-add-action {
+  border-color: #17683f;
+  background: #17683f;
+  color: #fff;
+}
+
+.data-add-action:hover {
+  background: #105632;
+}
+
+.data-workspace-titlebar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 0 20px;
+}
+
+.data-workspace-titlebar h1 {
+  margin: 0 0 5px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #182a20;
+}
+
+.data-workspace-titlebar p {
+  margin: 0;
+  color: #708077;
+  font-size: 13px;
+}
+
+.data-workspace-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  color: #68786e;
+  font-size: 12px;
+}
+
+.data-workspace-summary strong {
+  margin-left: 8px;
+  color: #17683f;
+  font-size: 18px;
+}
+
+.data-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: #e9efe9;
+  border: 1px solid #d8e2d9;
+  border-bottom: 0;
+}
+
+.data-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #5e7064;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.data-search-control {
+  flex: 1 1 260px;
+}
+
+.data-toolbar input,
+.data-toolbar select {
+  height: 36px;
+  min-width: 145px;
+  padding: 0 10px;
+  border: 1px solid #cbd7ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #26372d;
+  font: inherit;
+  font-size: 13px;
+}
+
+.data-search-control input {
+  width: 100%;
+}
+
+.data-clear-action {
+  min-height: 36px;
+  font-size: 12px;
+}
+
+.data-grid-frame {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d8e2d9;
+}
+
+.data-grid-scroll {
+  max-height: calc(100vh - 270px);
+  min-height: 300px;
+  overflow: auto;
+}
+
+.data-grid-table {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #2b3930;
+  font-size: 12px;
+}
+
+.data-grid-table th,
+.data-grid-table td {
+  max-width: 280px;
+  padding: 10px 11px;
+  border-right: 1px solid #e5ebe5;
+  border-bottom: 1px solid #e5ebe5;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.data-grid-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f5f8f5;
+  color: #4a5e50;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.data-grid-table tbody tr:nth-child(even) {
+  background: #fbfcfb;
+}
+
+.data-grid-table tbody tr:hover {
+  background: #f0f7f1;
+}
+
+.data-grid-table .data-row-number {
+  width: 38px;
+  color: #89968d;
+  text-align: center;
+  background: #f7f9f7;
+}
+
+.data-grid-uid {
+  color: #17683f;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.data-grid-final {
+  color: #17683f;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.data-grid-empty {
+  height: 130px;
+  text-align: center !important;
+  vertical-align: middle !important;
+  color: #78877d;
+}
+
+.data-grid-footer {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-top: 1px solid #e5ebe5;
+  color: #718078;
+  font-size: 11px;
+}
+
+.data-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(14, 28, 19, 0.54);
+}
+
+.data-entry-modal {
+  width: min(100%, 980px);
+  max-height: min(92vh, 900px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #dce5dd;
+  border-radius: 8px;
+  box-shadow: 0 22px 70px rgba(10, 26, 16, 0.28);
+}
+
+.data-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  background: #fff;
+  border-bottom: 1px solid #e4ebe4;
+}
+
+.data-modal-header h2 {
+  margin: 0 0 4px;
+  color: #1f3426;
+  font-size: 19px;
+}
+
+.data-modal-header p {
+  margin: 0;
+  color: #708077;
+  font-size: 12px;
+}
+
+.data-modal-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dce5dd;
+  border-radius: 5px;
+  background: #f8faf8;
+  color: #42564a;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.data-modal-form {
+  padding: 18px 22px 20px;
+}
+
+.data-modal-patient-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.data-modal-patient-grid > label,
+.data-uid-control > label,
+.data-modal-payment-row > label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #56675c;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.data-modal-form input:not([type="checkbox"]),
+.data-modal-form select {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid #cfdad0;
+  border-radius: 4px;
+  background: #fff;
+  color: #26372d;
+  font: inherit;
+  font-size: 13px;
+}
+
+.data-uid-control {
+  grid-column: span 2;
+}
+
+.data-uid-row {
+  display: flex;
+  gap: 5px;
+}
+
+.data-uid-row > input {
+  flex: 1;
+}
+
+.data-uid-row > button,
+.data-uid-row > select {
+  width: auto;
+  padding: 0 10px;
+  border: 1px solid #cfdad0;
+  border-radius: 4px;
+  background: #f5f8f5;
+  color: #31543d;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.data-modal-section-heading {
+  margin: 20px 0 9px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e4ebe4;
+  color: #30493a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.data-service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 14px;
+}
+
+.data-service-option {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  align-items: center;
+  gap: 8px;
+  color: #43564a;
+  font-size: 12px;
+}
+
+.data-service-option > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.data-service-option input[type="checkbox"] {
+  accent-color: #17683f;
+}
+
+.data-modal-payment-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  align-items: end;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.data-live-total {
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 10px;
+  border-left: 2px solid #d5e2d7;
+}
+
+.data-live-total span {
+  color: #718078;
+  font-size: 11px;
+}
+
+.data-live-total strong {
+  color: #17683f;
+  font-size: 15px;
+}
+
+.data-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #e4ebe4;
+}
+
+.data-cancel-action {
+  color: #59695f;
+}
+
+@media (max-width: 720px) {
+  .data-workspace {
+    padding: 0 12px 20px;
+  }
+
+  .data-workspace-titlebar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .data-toolbar {
+    align-items: stretch;
+  }
+
+  .data-search-control,
+  .data-toolbar input,
+  .data-toolbar select {
+    width: 100%;
+  }
+
+  .data-grid-scroll {
+    max-height: calc(100vh - 300px);
+  }
+
+  .data-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .data-entry-modal {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .data-modal-header,
+  .data-modal-form {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .data-modal-patient-grid,
+  .data-service-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .data-uid-control {
+    grid-column: 1 / -1;
+  }
+
+  .data-modal-payment-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .data-workspace-actions {
+    gap: 6px;
+  }
+
+  .data-add-action,
+  .data-secondary-action {
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .data-service-grid,
+  .data-modal-patient-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .data-service-option {
+    grid-template-columns: minmax(0, 1fr) 100px;
+  }
+}

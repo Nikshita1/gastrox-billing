@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, getDocs } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { db } from "../firebase";
 import { fetchPatientByUID, findNextAvailableUIDForBilling } from "../utils/patientUtils";
@@ -14,6 +14,30 @@ const serviceOptions = [
   { key: "sigmoidoscopy", label: "Sigmoidoscopy" },
   { key: "ecg", label: "ECG" }
 ];
+
+const getDateKey = (value) => {
+  if (!value) return "";
+  const normalized = String(value).trim();
+  const isoMatch = normalized.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoMatch) return isoMatch[1];
+
+  const slashMatch = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, day, month, year] = slashMatch;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const localDate = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+};
+
+const getBillServices = (bill) => serviceOptions
+  .filter(({ key }) => bill[key])
+  .map(({ key, label }) => `${label} ₹${bill[`${key}Amount`] || 0}`)
+  .concat(bill.other ? [`${bill.other} ₹${bill.otherAmount || 0}`] : [])
+  .join(", ") || "None";
 
 const getTodayDate = () => {
   const today = new Date();
@@ -37,9 +61,36 @@ const createInitialForm = () => ({
 
 export default function DataEntry() {
   const [formData, setFormData] = useState(createInitialForm);
+  const [records, setRecords] = useState([]);
   const [isCheckingUID, setIsCheckingUID] = useState(false);
   const [isLoadingUID, setIsLoadingUID] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+  const [isEntryOpen, setIsEntryOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [dateMode, setDateMode] = useState("all");
+  const [dateFilter, setDateFilter] = useState(getTodayDate);
+  const [monthFilter, setMonthFilter] = useState(() => getTodayDate().slice(0, 7));
+  const [yearFilter, setYearFilter] = useState(() => getTodayDate().slice(0, 4));
+  const [uidPrefix, setUidPrefix] = useState("GXO");
+
+  useEffect(() => {
+    const loadRecords = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "bills"));
+        const loadedRecords = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
+        loadedRecords.sort((first, second) => getDateKey(second.date).localeCompare(getDateKey(first.date)));
+        setRecords(loadedRecords);
+      } catch (error) {
+        console.error("Error loading data-entry records:", error);
+        toast.error("Could not load records.");
+      } finally {
+        setIsLoadingRecords(false);
+      }
+    };
+
+    loadRecords();
+  }, []);
 
   useEffect(() => {
     const uid = formData.uid.trim();
@@ -71,10 +122,28 @@ export default function DataEntry() {
   const discount = Number(formData.discount || 0);
   const finalAmount = Math.max(0, total - discount);
 
+  const filteredRecords = useMemo(() => records.filter((record) => {
+    const recordDate = getDateKey(record.date);
+    if (dateMode === "day" && recordDate !== dateFilter) return false;
+    if (dateMode === "month" && !recordDate.startsWith(monthFilter)) return false;
+    if (dateMode === "year" && !recordDate.startsWith(yearFilter)) return false;
+
+    const query = search.trim().toLowerCase();
+    return !query || [record.uid, record.name, record.mobile]
+      .some((value) => String(value || "").toLowerCase().includes(query));
+  }), [records, dateMode, dateFilter, monthFilter, yearFilter, search]);
+
+  const filteredRevenue = filteredRecords.reduce((sum, record) => sum + Number(record.finalAmount || 0), 0);
+
   const handleChange = (event) => {
     const { name, value, checked, type } = event.target;
     if ((name === "age" || name === "mobile") && value && !/^\d+$/.test(value)) return;
-    setFormData((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
+    const nextValue = name === "uid" ? value.toUpperCase() : type === "checkbox" ? checked : value;
+    if (name === "uid") {
+      if (nextValue.startsWith("GXO-")) setUidPrefix("GXO");
+      else if (nextValue.startsWith("GX-")) setUidPrefix("GX");
+    }
+    setFormData((current) => ({ ...current, [name]: nextValue }));
   };
 
   const loadPatient = async () => {
@@ -111,8 +180,11 @@ export default function DataEntry() {
   const handleNextUID = async () => {
     setIsLoadingUID(true);
     try {
-      const nextUID = await findNextAvailableUIDForBilling(formData.uid || "", "GXO");
+      const enteredUID = formData.uid.trim();
+      const nextPrefix = enteredUID.startsWith("GXO-") ? "GXO" : enteredUID.startsWith("GX-") ? "GX" : uidPrefix;
+      const nextUID = await findNextAvailableUIDForBilling(enteredUID, nextPrefix);
       setFormData((current) => ({ ...current, uid: nextUID }));
+      setUidPrefix(nextPrefix);
     } catch (error) {
       console.error("Error finding next UID:", error);
       toast.error("Unable to find the next UID.");
@@ -147,10 +219,12 @@ export default function DataEntry() {
         finalAmount,
         createdAt: new Date()
       };
-      await addDoc(collection(db, "bills"), billData);
+      const document = await addDoc(collection(db, "bills"), billData);
+      setRecords((current) => [{ id: document.id, ...billData }, ...current]);
       await exportToGoogleSheets(billData, "bill");
       toast.success("Record saved and added to History.");
       setFormData(createInitialForm());
+      setIsEntryOpen(false);
     } catch (error) {
       console.error("Error saving data-entry bill:", error);
       toast.error("Could not save the record. Please try again.");
@@ -160,83 +234,172 @@ export default function DataEntry() {
   };
 
   return (
-    <div className="form-container">
-      <div className="clinic-header">
+    <main className="data-workspace">
+      <header className="data-workspace-header">
+        <div className="data-brandline">
+          <Link to="/" className="data-home-link" aria-label="Home">Clinic</Link>
+          <span> / </span>
+          <strong>Patient records</strong>
+        </div>
+        <div className="data-workspace-actions">
+          <Link to="/history" className="data-secondary-action">History</Link>
+          <button type="button" className="data-add-action" onClick={() => setIsEntryOpen(true)}>＋ Add record</button>
+        </div>
+      </header>
+
+      <section className="data-workspace-titlebar">
         <div>
-          <h1>Patient Data Entry</h1>
-          <p>Enter patient and payment details. Totals update automatically.</p>
+          <h1>Patient records</h1>
+          <p>Search and manage billing entries</p>
         </div>
-        <Link to="/" className="nav-btn">Home</Link>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="uid-input-group">
-            <input name="uid" value={formData.uid} onChange={handleChange} placeholder="UID (GXO-001)" required />
-            <button type="button" className="check-uid-btn" onClick={loadPatient} disabled={isCheckingUID || !formData.uid}>
-              {isCheckingUID ? "Checking..." : "Find"}
-            </button>
-            <button type="button" className="next-uid-btn" onClick={handleNextUID} disabled={isLoadingUID}>
-              {isLoadingUID ? "Loading..." : "Next UID"}
-            </button>
-          </div>
-          <input name="name" value={formData.name} onChange={handleChange} placeholder="Name" required />
-          <input name="mobile" value={formData.mobile} onChange={handleChange} placeholder="Mobile" inputMode="numeric" required />
-          <input name="age" type="number" min="0" value={formData.age} onChange={handleChange} placeholder="Age" required />
-          <input name="date" type="date" value={formData.date} onChange={handleChange} required />
-          <input name="referral" value={formData.referral} onChange={handleChange} placeholder="Referral" />
+        <div className="data-workspace-summary">
+          <span>{filteredRecords.length} records</span>
+          <strong>₹{filteredRevenue.toLocaleString("en-IN")}</strong>
+          <small>collected in view</small>
         </div>
+      </section>
 
-        <div className="section-title">Services</div>
-        <div className="service-table">
-          <div className="service-table-header">
-            <div className="service-col-check"></div>
-            <div className="service-col-name">Service</div>
-            <div className="service-col-amount">Amount</div>
-          </div>
-          {serviceOptions.map(({ key, label }) => (
-            <div className="service-item" key={key}>
-              <input type="checkbox" name={key} checked={formData[key]} onChange={handleChange} aria-label={`Include ${label}`} />
-              <label htmlFor={key}>{label}</label>
-              <input type="number" min="0" name={`${key}Amount`} value={formData[`${key}Amount`]} onChange={handleChange} placeholder="₹ 0" aria-label={`${label} amount`} />
-            </div>
-          ))}
-          <div className="service-item">
-            <span></span>
-            <input name="other" value={formData.other} onChange={handleChange} placeholder="Other service" aria-label="Other service name" />
-            <input type="number" min="0" name="otherAmount" value={formData.otherAmount} onChange={handleChange} placeholder="₹ 0" aria-label="Other service amount" />
-          </div>
-        </div>
+      <section className="data-toolbar" aria-label="Record filters">
+        <label className="data-search-control">
+          <span>Search</span>
+          <input type="search" placeholder="UID, patient name, mobile" value={search} onChange={(event) => setSearch(event.target.value)} />
+        </label>
+        <label className="data-filter-control">
+          <span>Date range</span>
+          <select value={dateMode} onChange={(event) => setDateMode(event.target.value)}>
+            <option value="all">All dates</option>
+            <option value="day">Day</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+          </select>
+        </label>
+        {dateMode === "day" && (
+          <input aria-label="Filter by day" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+        )}
+        {dateMode === "month" && (
+          <input aria-label="Filter by month" type="month" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} />
+        )}
+        {dateMode === "year" && (
+          <input aria-label="Filter by year" type="number" min="2000" max="2100" value={yearFilter} onChange={(event) => setYearFilter(event.target.value)} />
+        )}
+        <button type="button" className="data-clear-action" onClick={() => { setSearch(""); setDateMode("all"); }}>Clear filters</button>
+      </section>
 
-        <div className="payment-grid">
-          <div className="payment-panel">
-            <span>Payment Mode</span>
-            <div className="payment-options">
-              {["Cash", "Online", "Both"].map((mode) => (
-                <label key={mode}>
-                  <input type="radio" name="paymentMode" value={mode} checked={formData.paymentMode === mode} onChange={handleChange} /> {mode}
-                </label>
+      <section className="data-grid-frame" aria-label="Patient billing records">
+        <div className="data-grid-scroll">
+          <table className="data-grid-table">
+            <thead>
+              <tr>
+                <th className="data-row-number">#</th>
+                <th>UID</th>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Age</th>
+                <th>Date</th>
+                <th>Referral</th>
+                <th>Services</th>
+                <th>Payment</th>
+                <th>Total</th>
+                <th>Discount</th>
+                <th>Final amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoadingRecords ? (
+                <tr><td colSpan="12" className="data-grid-empty">Loading records...</td></tr>
+              ) : filteredRecords.length === 0 ? (
+                <tr><td colSpan="12" className="data-grid-empty">No records match these filters.</td></tr>
+              ) : filteredRecords.map((record, index) => (
+                <tr key={record.id}>
+                  <td className="data-row-number">{index + 1}</td>
+                  <td className="data-grid-uid">{record.uid || "—"}</td>
+                  <td>{record.name || "—"}</td>
+                  <td>{record.mobile || "—"}</td>
+                  <td>{record.age || "—"}</td>
+                  <td>{getDateKey(record.date) || "—"}</td>
+                  <td>{record.referral || "—"}</td>
+                  <td>{getBillServices(record)}</td>
+                  <td>{record.paymentMode || "—"}</td>
+                  <td>₹{Number(record.total || 0).toLocaleString("en-IN")}</td>
+                  <td>₹{Number(record.discount || 0).toLocaleString("en-IN")}</td>
+                  <td className="data-grid-final">₹{Number(record.finalAmount || 0).toLocaleString("en-IN")}</td>
+                </tr>
               ))}
-            </div>
-          </div>
-          <input type="number" min="0" name="discount" value={formData.discount} onChange={handleChange} placeholder="Discount" />
+            </tbody>
+          </table>
         </div>
+        <footer className="data-grid-footer">
+          <span>{filteredRecords.length} of {records.length} entries</span>
+          <span>Sorted by date</span>
+        </footer>
+      </section>
 
-        <div className="total-box"><div>Total</div><div>₹{total}</div></div>
-        <div className="total-box"><div>Discount</div><div>₹{discount}</div></div>
-        <div className="total-box"><div>Final Amount</div><div>₹{finalAmount}</div></div>
+      {isEntryOpen && (
+        <div className="data-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !isSaving) setIsEntryOpen(false); }}>
+          <section className="data-entry-modal" role="dialog" aria-modal="true" aria-labelledby="data-entry-title">
+            <header className="data-modal-header">
+              <div>
+                <h2 id="data-entry-title">New patient record</h2>
+                <p>Patient details and billing information</p>
+              </div>
+              <button type="button" className="data-modal-close" onClick={() => setIsEntryOpen(false)} aria-label="Close">×</button>
+            </header>
+            <form onSubmit={handleSubmit} className="data-modal-form">
+              <div className="data-modal-patient-grid">
+                <div className="data-uid-control">
+                  <label htmlFor="entry-uid">UID</label>
+                  <div className="data-uid-row">
+                    <input id="entry-uid" name="uid" value={formData.uid} onChange={handleChange} placeholder="GX-001 or GXO-001" required />
+                    <button type="button" onClick={loadPatient} disabled={isCheckingUID || !formData.uid}>{isCheckingUID ? "..." : "Find"}</button>
+                    <select aria-label="UID prefix for next ID" value={uidPrefix} onChange={(event) => setUidPrefix(event.target.value)}>
+                      <option value="GXO">GXO</option>
+                      <option value="GX">GX</option>
+                    </select>
+                    <button type="button" onClick={handleNextUID} disabled={isLoadingUID}>{isLoadingUID ? "..." : "Next"}</button>
+                  </div>
+                </div>
+                <label>Name<input name="name" value={formData.name} onChange={handleChange} required /></label>
+                <label>Mobile<input name="mobile" value={formData.mobile} onChange={handleChange} inputMode="numeric" required /></label>
+                <label>Age<input name="age" type="number" min="0" value={formData.age} onChange={handleChange} required /></label>
+                <label>Date<input name="date" type="date" value={formData.date} onChange={handleChange} required /></label>
+                <label>Referral<input name="referral" value={formData.referral} onChange={handleChange} /></label>
+              </div>
 
-        <div className="button-group">
-          <button type="button" className="reset-btn" onClick={() => setFormData(createInitialForm())}>Reset Form</button>
-          <button type="submit" className="proceed-btn" disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Record"}
-          </button>
+              <div className="data-modal-section-heading">Services</div>
+              <div className="data-service-grid">
+                {serviceOptions.map(({ key, label }) => (
+                  <label className="data-service-option" key={key}>
+                    <span><input type="checkbox" name={key} checked={formData[key]} onChange={handleChange} /> {label}</span>
+                    <input type="number" min="0" name={`${key}Amount`} value={formData[`${key}Amount`]} onChange={handleChange} placeholder="Amount" aria-label={`${label} amount`} />
+                  </label>
+                ))}
+                <label className="data-service-option">
+                  <input name="other" value={formData.other} onChange={handleChange} placeholder="Other service" aria-label="Other service name" />
+                  <input type="number" min="0" name="otherAmount" value={formData.otherAmount} onChange={handleChange} placeholder="Amount" aria-label="Other service amount" />
+                </label>
+              </div>
+
+              <div className="data-modal-payment-row">
+                <label>Payment mode
+                  <select name="paymentMode" value={formData.paymentMode} onChange={handleChange}>
+                    <option>Cash</option><option>Online</option><option>Both</option>
+                  </select>
+                </label>
+                <label>Discount
+                  <input type="number" min="0" name="discount" value={formData.discount} onChange={handleChange} />
+                </label>
+                <div className="data-live-total"><span>Total</span><strong>₹{total.toLocaleString("en-IN")}</strong></div>
+                <div className="data-live-total"><span>Final</span><strong>₹{finalAmount.toLocaleString("en-IN")}</strong></div>
+              </div>
+
+              <footer className="data-modal-actions">
+                <button type="button" className="data-cancel-action" onClick={() => setFormData(createInitialForm())}>Clear form</button>
+                <button type="submit" className="data-add-action" disabled={isSaving}>{isSaving ? "Saving..." : "Save record"}</button>
+              </footer>
+            </form>
+          </section>
         </div>
-      </form>
-
-      <div className="history-button">
-        <Link to="/history" className="history-btn">View History</Link>
-      </div>
-    </div>
+      )}
+    </main>
   );
 }
