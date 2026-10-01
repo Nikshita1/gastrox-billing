@@ -4,7 +4,7 @@ const HISTORY_UNLOCK_KEY = "historyUnlocked";
 const HISTORY_PHONE_KEY = "historyAccessPhone";
 const HISTORY_OTP_KEY = "historyAccessOtp";
 const HISTORY_TARGET_KEY = "historyAccessOtpTarget";
-const ADMIN_PHONE = "9876543210";
+const ADMIN_PHONE = (import.meta.env.VITE_HISTORY_ADMIN_PHONE || "6280874133").replace(/\D/g, "");
 
 const normalizePhone = (value = "") => value.replace(/\D/g, "");
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
@@ -12,7 +12,7 @@ const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 export default function PasswordGate({ onUnlock }) {
   const [phone, setPhone] = useState(() => {
     if (typeof window === "undefined") return "";
-    return localStorage.getItem(HISTORY_PHONE_KEY) || "";
+    return localStorage.getItem(HISTORY_PHONE_KEY) || ADMIN_PHONE;
   });
   const [currentPhone, setCurrentPhone] = useState("");
   const [newPhone, setNewPhone] = useState("");
