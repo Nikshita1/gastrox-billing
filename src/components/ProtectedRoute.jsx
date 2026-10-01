@@ -5,10 +5,7 @@ export default function ProtectedRoute({ component: Component, ...props }) {
   const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
-    // Check if already unlocked in this session
-    if (sessionStorage.getItem("historyUnlocked") === "true") {
-      setIsUnlocked(true);
-    }
+    setIsUnlocked(sessionStorage.getItem("historyUnlocked") === "true");
   }, []);
 
   const handleUnlock = () => {

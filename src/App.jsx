@@ -11,6 +11,7 @@ import Prescription from "./components/Prescription";
 import History from "./components/History";
 import FollowupTracker from "./components/FollowupTracker";
 import Receipt from "./components/Receipt";
+import PasswordGate from "./components/PasswordGate";
 import "./index.css";
 
 // Protected Route Component
@@ -32,6 +33,36 @@ function ProtectedRoute({ component: Component }) {
   }
 
   return user ? <Component /> : <Navigate to="/" />;
+}
+
+function HistoryProtectedRoute({ component: Component }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+      setIsUnlocked(sessionStorage.getItem("historyUnlocked") === "true");
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <div className="loading-spinner">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/" />;
+  }
+
+  if (!isUnlocked) {
+    return <PasswordGate onUnlock={() => setIsUnlocked(true)} />;
+  }
+
+  return <Component />;
 }
 
 export default function App() {
@@ -114,7 +145,7 @@ export default function App() {
         <Route path="/billing" element={<ProtectedRoute component={BillingForm} />} />
         <Route path="/prescription" element={<ProtectedRoute component={Prescription} />} />
         <Route path="/followups" element={<ProtectedRoute component={FollowupTracker} />} />
-        <Route path="/history" element={<ProtectedRoute component={History} />} />
+        <Route path="/history" element={<HistoryProtectedRoute component={History} />} />
         <Route path="/receipt" element={<ProtectedRoute component={Receipt} />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
