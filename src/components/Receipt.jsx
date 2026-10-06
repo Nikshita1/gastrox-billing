@@ -18,6 +18,15 @@ export default function Receipt({ formData, total, finalAmount, onBack }) {
     return value;
   };
 
+  const handlePrint = () => {
+    const landscapePageStyle = document.createElement("style");
+    landscapePageStyle.textContent = "@page { size: A4 landscape; margin: 0; }";
+    document.head.appendChild(landscapePageStyle);
+
+    window.addEventListener("afterprint", () => landscapePageStyle.remove(), { once: true });
+    window.requestAnimationFrame(() => window.print());
+  };
+
   return (
     <div className="receipt-container">
       <div className="receipt-header">
@@ -94,22 +103,24 @@ export default function Receipt({ formData, total, finalAmount, onBack }) {
         )}
       </div>
 
-      <div className="receipt-summary">
-        {formData.discount && Number(formData.discount) > 0 && (
-          <div>
-            <p><strong>Discount:</strong> ₹{Number(formData.discount)}</p>
+      <div className="receipt-bottom-row">
+        <div className="receipt-signature">
+          <div className="signature-label">Issued by, signature:</div>
+          <div className="signature-placeholder">
+            <img src="/signature.png" alt="Doctor's Signature" />
           </div>
-        )}
-        <div>
-          <p><strong>Total:</strong> ₹{total}</p>
-          <p className="final-amount">Final Amount: ₹{finalAmount}</p>
         </div>
-      </div>
 
-      <div className="receipt-signature">
-        <div className="signature-label">Issued by, signature:</div>
-        <div className="signature-placeholder">
-          <img src="/signature.png" alt="Doctor's Signature" />
+        <div className="receipt-summary">
+          {formData.discount && Number(formData.discount) > 0 && (
+            <div>
+              <p><strong>Discount:</strong> ₹{Number(formData.discount)}</p>
+            </div>
+          )}
+          <div>
+            <p><strong>Total:</strong> ₹{total}</p>
+            <p className="final-amount">Final Amount: ₹{finalAmount}</p>
+          </div>
         </div>
       </div>
 
@@ -117,7 +128,7 @@ export default function Receipt({ formData, total, finalAmount, onBack }) {
         <button className="back-btn" onClick={onBack}>
           Back to Form
         </button>
-        <button className="print-btn" onClick={() => window.print()}>
+        <button className="print-btn" onClick={handlePrint}>
           Print Receipt
         </button>
       </div>

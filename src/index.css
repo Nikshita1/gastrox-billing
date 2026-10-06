@@ -420,50 +420,50 @@ body {
 }
 
 .print-name {
-  top: 22.5%;
+  top: 24.5%;
   left: 20%;
   width: 20%;
 }
 
 .print-uid {
-  top:22.5%;
+  top:24.5%;
   left: 57%;
   width: 13%;
 }
 
 .print-phone {
-  top: 22.5%;
+  top: 24.5%;
   left: 83%;
   width: 13%;
 }
 
 .print-age {
-  top: 26.5%;
+  top: 27.6%;
   left: 11%;
   width: 6%;
 }
 
 .print-sex {
-  top: 26.5%;
-  left: 28%;
+  top: 27.6%;
+  left: 25%;
   width: 7%;
 }
 
 .print-weight {
-  top: 26.5%;
+  top: 27.6%;
   left: 45%;
   width: 9%;
 }
 
 .print-address {
-  top: 26.5%;
+  top: 27.6%;
   left: 65%;
   width: 60%;
 }
 
 .print-date {
-  top: 26.5%;
-  left: 86%;
+  top: 27.6%;
+  left: 88%;
   width: 13%;
 }
 
@@ -508,7 +508,8 @@ body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
+    height: auto;
+    min-height: 0;
     background: #fff;
     color: #000;
   }
@@ -1606,14 +1607,25 @@ input[type="date"] {
   color: #2d3748;
 }
 
-.receipt-summary {
-  display: flex;
-  justify-content: space-between;
+.receipt-bottom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: 24px;
-  align-items: flex-end;
   margin-top: 24px;
   padding-top: 18px;
   border-top: 1px solid #e2e8f0;
+}
+
+.receipt-summary {
+  display: flex;
+  justify-self: end;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  text-align: right;
 }
 
 .receipt-summary p {
@@ -1628,9 +1640,8 @@ input[type="date"] {
 }
 
 .receipt-signature {
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid #cbd5e0;
+  margin: 0;
+  padding: 0;
 }
 
 .signature-label {
@@ -1682,6 +1693,10 @@ input[type="date"] {
     display: block;
   }
 
+  .receipt-bottom-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .radio-group,
   .payment-group {
     justify-content: flex-start;
@@ -1712,6 +1727,117 @@ input[type="date"] {
     border-radius: 0;
     margin: 0;
     padding: 0;
+  }
+
+  .receipt-container {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    padding: 2mm !important;
+    color: #17231b;
+    font-size: 12pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .receipt-header {
+    display: block !important;
+    width: 100%;
+    margin: 0 0 3mm;
+    break-inside: avoid;
+  }
+
+  .receipt-logo {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    object-fit: contain;
+    border-radius: 0;
+  }
+
+  .receipt-info-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6mm;
+    margin-bottom: 4mm;
+    break-inside: avoid;
+  }
+
+  .receipt-info-grid > div {
+    min-width: 0;
+  }
+
+  .receipt-info-grid p {
+    margin: 1.5mm 0;
+    font-size: 10pt;
+    line-height: 1.2;
+  }
+
+  .receipt-services {
+    margin-top: 0;
+    border-radius: 3px;
+    break-inside: avoid;
+  }
+
+  .services-header,
+  .service-line {
+    grid-template-columns: minmax(0, 1fr) 35mm;
+    padding: 2mm 4mm;
+    font-size: 10pt;
+  }
+
+  .receipt-bottom-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8mm;
+    margin-top: 4mm;
+    padding-top: 3mm;
+    border-top: 1px solid #e2e8f0;
+    break-inside: avoid;
+  }
+
+  .receipt-summary {
+    display: flex !important;
+    justify-self: end;
+    justify-content: flex-end;
+    gap: 6mm;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .receipt-summary p {
+    font-size: 10pt;
+  }
+
+  .receipt-summary .final-amount {
+    font-size: 13pt;
+  }
+
+  .receipt-signature {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    break-inside: avoid;
+  }
+
+  .receipt-signature .signature-label {
+    margin-bottom: 2mm;
+    font-size: 9pt;
+  }
+
+  .receipt-signature .signature-placeholder {
+    height: 18mm;
+  }
+
+  .receipt-signature .signature-placeholder img {
+    max-height: 18mm;
+    max-width: 45mm;
   }
 }
 
